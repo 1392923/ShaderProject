@@ -27,25 +27,25 @@ Shader "Learn/1/DiffuseHalfLambert" {
 			fixed4 _Diffuse;
 
 			struct a2v {
-				float4 _pos : POSITION;
-				float3 _normal : NORMAL;
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
 			};
 
 			struct v2f {
-				float4 _vertex : SV_POSITION;
-				float3 _worldNormal : TEXCOORD0;
+				float4 clipPos : SV_POSITION;
+				float3 worldNormal : TEXCOORD0;
 			};
 
 			v2f vert (a2v v ){
 				v2f f;
-				f._vertex = UnityObjectToClipPos(v._pos);
+				f.clipPos = UnityObjectToClipPos(v.vertex);
 				//即mul(v._normal, (float3x3)unity_WorldToObject)
-				f._worldNormal = UnityObjectToWorldNormal(v._normal);
+				f.worldNormal = UnityObjectToWorldNormal(v.normal);
 				return f;
 			}
 
 			fixed4 frag(v2f f ) : SV_TARGET0{
-				fixed3 _worldNormal = normalize(f._worldNormal);
+				fixed3 _worldNormal = normalize(f.worldNormal);
 				fixed3 _worldLight = normalize(_WorldSpaceLightPos0.xyz);
 				//半兰伯特计算模型。对其结果进行了一个缩放0.5倍再加上一个0.5大小的位置，从而将结果范围从[-1,1]映射到[0,1]范围内。
 				fixed3 _diffuseVal = _LightColor0.rgb * _Diffuse.rgb * (dot(_worldNormal, _worldLight) * 0.5 + 0.5);

@@ -27,26 +27,26 @@ Shader "Learn/1/DiffusePixeLevel" {
 			fixed4 _Diffuse;
 
 			struct a2v {
-				float4 _pos : POSITION;
-				float3 _normal : NORMAL;
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
 			};
 
 			struct v2f {
-				float4 _vertex : SV_POSITION;
-				float3 _worldNormal : TEXCOORD0;
+				float4 clipPos : SV_POSITION;
+				float3 worldNormal : TEXCOORD0;
 			};
 
 			v2f vert(a2v v ){
 				v2f f;
 				//顶点，从模型空间转换到裁剪空间。
-				f._vertex = UnityObjectToClipPos(v._pos);
+				f.clipPos = UnityObjectToClipPos(v.vertex);
 				//法线，从模型空间转换到世界空间。
-				f._worldNormal = UnityObjectToWorldNormal(v._normal);
+				f.worldNormal = UnityObjectToWorldNormal(v.normal);
 				return f;
 			}
 
 			fixed4 frag(v2f f) : SV_TARGET0{
-				fixed3 _worldNormal = normalize(f._worldNormal);
+				fixed3 _worldNormal = normalize(f.worldNormal);
 				//计算漫反射:入射光颜色强度c * 自定义漫反射颜色强度d * （世界坐标下，单位法向量与入射光单位向量的点积）v，注意v不能为负，因此用saturate截取到小于0，等于0;
 				fixed3 _worldLight = normalize(_WorldSpaceLightPos0.xyz);
 				//兰伯特计算模型。
@@ -60,7 +60,7 @@ Shader "Learn/1/DiffusePixeLevel" {
 			ENDCG
 		}
 	}
-
+	//FallBack 很重要，不是随便乱写的，会影响光影等。
 	FallBack "Diffuse"
 
 }

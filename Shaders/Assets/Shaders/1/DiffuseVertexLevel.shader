@@ -28,23 +28,23 @@ Shader "Learn/1/DiffuseVertexLevel" {
 			//颜色属性的范围在0~1之间，因此使用fixed精度就满足。
 			fixed4 _Diffuse;
 
-			//CG中的数据类型:
+			//对于输入属性的名称，不要做修改,例如normal,tangent，不要加_号。因为例如切线空间下的宏定义，改了名会报错。
 			struct a2v {
-				float4 _pos : POSITION;
-				float3 _normal : NORMAL;
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
 			};
-
+			
 			struct v2f {
-				float4 _vertex : SV_POSITION;
-				fixed3 _color : COLOR;
+				float4 clipPos : SV_POSITION;
+				fixed3 color : COLOR;
 			};
 
 			v2f vert (a2v v ) {
 				v2f f;
 				//将模型顶点从模型坐标系，转换到裁剪坐标系。即UNITY_MATRIX_MVP 矩阵。
-				f._vertex = UnityObjectToClipPos(v._pos);
+				f.clipPos = UnityObjectToClipPos(v.vertex);
 				//获取世界坐标系下的单位法线向量
-				fixed3 _worldNormal = normalize(UnityObjectToWorldNormal(v._normal));
+				fixed3 _worldNormal = normalize(UnityObjectToWorldNormal(v.normal));
 				//获取世界坐标系下的单位入射光向量。不具通用性，这是假设场景中只有一个平行光源。
 				fixed3 _worldLight = normalize(_WorldSpaceLightPos0.xyz);
 				//计算漫反射:入射光颜色强度c * 自定义漫反射颜色强度d * （世界坐标下，单位法向量与入射光单位向量的点积）v，注意v不能为负，因此用saturate截取到小于0，等于0;
@@ -52,13 +52,13 @@ Shader "Learn/1/DiffuseVertexLevel" {
 				//环境光
 				fixed3 _ambientVal = UNITY_LIGHTMODEL_AMBIENT.xyz;
 
-				f._color = _ambientVal + _diffuseVal;
+				f.color = _ambientVal + _diffuseVal;
 
 				return f;
 			}
 
 			fixed4 frag(v2f f ) : SV_TARGET0{
-				return fixed4(f._color, 1.0);
+				return fixed4(f.color, 1.0);
 			}
 
 			ENDCG
