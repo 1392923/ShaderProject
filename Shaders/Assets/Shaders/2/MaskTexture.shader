@@ -6,18 +6,19 @@
 思路流程：
 通过采样得到遮罩纹理的纹素值，然后使用其中某个(或某几个)通道的值(例如texel.r)来与某种表面属性进行相乘，这样当该通道为0时，可以保护表面不受属性的影响。
 
+特别说明：在这篇中，使用的这张遮罩纹理其实有很多空间被浪费了，它的rgb分量存储的都是同一个值。在实际的游戏制作中，我们往往充分利用遮罩纹理中的每一个颜色通道来存储不同的表面属性。例如：我们可以把高光反射的强度存储在r通道，把边缘光照的强度存储在g通道，把高光反射的指数存储在b通道，把自发光强度存储在a通道。在游戏<DOTA2>中，开发人员为每个模型使用了4张纹理，一张用于定义模型颜色，一张用于定义表面法线，另外两张则都是遮罩纹理。这样两张遮罩纹理提供了共8种额外的表面属性，这使得游戏中的人物材质自由度很强，可以支持很多高级的模型属性。
 
 ******/
 
 Shader "Learn/2/MaskTexture" {
 
 	Properties{
-		_Diffuse("Diffuse",COLOR) = (1,1,1,1)
-		_MainTex("MainTex", 2D) = "while" {}
-		_BumpMap("BumpMap",2D) = "bump" {}
-		_BumpScale("BumpScale",Range(0.1, 2)) = 1
-		_SpecularMask("SpecularMask", 2D) = "while" {}
-		_SpecularMaskScale("SpecularMaskScale", Range(0.1,2)) = 1
+		_Color("Color Tint",COLOR) = (1,1,1,1)
+		_MainTex("Main Tex", 2D) = "while" {}
+		_BumpMap("Normal Map",2D) = "bump" {}
+		_BumpScale("Bump Scale",Range(0.1, 2)) = 1
+		_SpecularMask("Specular Mask", 2D) = "while" {}
+		_SpecularMaskScale("Specular Scale", Range(0.1,100)) = 1
 		_Specular("Specular",COLOR) = (1,1,1,1)
 		_Gloss("Gloss", Range(8.0,256)) = 20
 	}
@@ -30,7 +31,7 @@ Shader "Learn/2/MaskTexture" {
 			#pragma fragment frag 
 			#include "Lighting.cginc"
 
-			float4 _Diffuse;
+			float4 _Color;
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 			sampler2D _BumpMap;
@@ -79,17 +80,17 @@ Shader "Learn/2/MaskTexture" {
 				float m = dot(tangentNormal.xy, tangentNormal.xy);//dot自己，求得模长的平方。
 				tangentNormal.z = sqrt(1.0 - saturate(m));
 
-				fixed3 albedoVal = tex2D(_MainTex, f.uv).rgb * _Diffuse.rgb;
+				fixed3 albedoVal = tex2D(_MainTex, f.uv).rgb * _Color.rgb;
 				fixed3 ambientVal = UNITY_LIGHTMODEL_AMBIENT.xyz * albedoVal;
 
-				fixed diffuseVal = _LightColor0.rgb * albedoVal.rgb * saturate(dot(tangentNormal, tangentLightDir));
+				fixed3 diffuseVal = _LightColor0.rgb * albedoVal * saturate(dot(tangentNormal, tangentLightDir));
 
 				fixed3 halfDir = normalize(tangentLightDir + tangentViewDir);
 				fixed specularMaskVal = tex2D(_SpecularMask, f.uv).r * _SpecularMaskScale;
 
 				fixed specularVal = _LightColor0.rgb * _Specular.rgb * pow(saturate(dot(tangentNormal, halfDir)), _Gloss) * specularMaskVal;
 
-				return fixed4(ambientVal + diffuseVal + specularVal,1.0);
+				return fixed4(ambientVal + diffuseVal + specularVal, 1.0);
 			}
 
 			ENDCG
